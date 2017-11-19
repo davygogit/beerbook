@@ -1,0 +1,15 @@
+<resources>
+    <declare-styleable name="SpiderChartView">
+        <attr name="maxValue" format="float" />
+        <attr name="range" format="float" />
+        <attr name="plotSize" format="float" />
+        <attr name="webLineWidth" format="float" />
+        <attr name="webLineColor" format="color"/>
+        <attr name="polyLineWidth" format="float"/>
+        <attr name="polyLineColor"  format="color"/>
+        <attr name="polyFillColor" format="color"/>
+        <attr name="polyAlpha" format="integer"/>
+        <attr name="drawPlot" format="boolean"/>
+
+    </declare-styleable>
+</resources>

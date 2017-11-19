@@ -1,0 +1,55 @@
+blonde
+brune
+rousse
+ambrée
+blanche
+american premium
+americain pale ale
+american amber ale
+american brown ale
+american dark lager
+strong bitter
+irish red ale
+strong scotch ale
+northern english brown ale
+brown porter
+robust porter
+baltic porter
+helles
+dry stout
+sweet stout
+foreign style stout
+imperial stout
+stout
+indian pale ale ( IPA )
+english indian pale ale ( IPA )
+imperial indian pale ale ( IPA )
+white
+belgian pale ale
+dubbel
+tripel
+belgian golden strong ale
+belgian dark strong ale
+old ale
+english style barley wine
+american premium lager
+pilsener
+munich dunkel
+bock
+dopplebock
+cream ale
+blond ale
+american wheat
+weissbier
+dunkelweissen
+weissenbockbon
+fruit beer
+herb beer
+spice beer
+vegetable beer
+banana beer
+christmas beer
+smoked beer
+wood aged beer
+speciality beer
+Saison
