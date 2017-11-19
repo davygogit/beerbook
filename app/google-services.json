@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "314451785327",
+    "firebase_url": "https://beerbook-2e09d.firebaseio.com",
+    "project_id": "beerbook-2e09d",
+    "storage_bucket": "beerbook-2e09d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:314451785327:android:7854dd7e68707a6d",
+        "android_client_info": {
+          "package_name": "com.davymoreau.android.beerbook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "314451785327-ec2i4ko4auh5mbrmaffei6qm938vs8sq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.davymoreau.android.beerbook",
+            "certificate_hash": "fe9e071a5b6c01abb1fc9a760e36bd90ac7932de"
+          }
+        },
+        {
+          "client_id": "314451785327-naofaki0ln8p82d20q7535pg3b0bqs09.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHhi6chN14cqUziR2YOa9VxVxHjuszD9k"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "314451785327-naofaki0ln8p82d20q7535pg3b0bqs09.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
