@@ -27,9 +27,16 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.davymoreau.android.beerbook.beersData.BeersData;
 import com.davymoreau.android.beerbook.database.BeerTastingContract;
 import com.davymoreau.android.beerbook.database.BeerTastingHelper;
-import com.davymoreau.android.beerbook.util.DataUtil;
+import com.davymoreau.android.beerbook.database.DataUtil;
+import com.davymoreau.android.beerbook.firebase.BeerFB;
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,13 +45,27 @@ import java.util.Comparator;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, BeerListAdapter.BeerClickListener {
 
+    //sqlite
     SQLiteDatabase mDb;
+    //firebase
+    private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mFirebaseReference;
+    //private FirebaseAuth mFirebaseAuth;
+    //private FirebaseAuth.AuthStateListener mAuthStateListener;
+
+    private ChildEventListener mChildEventListener;
+
+
     //BeerAdapter mAdapter;
     BeerListAdapter mAdapter;
     Context mContext;
     ArrayList mLocalList;
     ArrayList mCloudList;
     ArrayList mAdapterList;
+    LinearLayoutManager mLayoutManager;
+    boolean FBhasListener = false;
+
+    int limitFB = 8;
 
     ProgressBar mProgressBar;
     TextView mtvNoData;
@@ -86,6 +107,8 @@ public class MainActivity extends AppCompatActivity
 
         mContext = MainActivity.this;
 
+        mCloudList = new ArrayList();
+
 
         // Ajout nouvelle bière
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -109,19 +132,35 @@ public class MainActivity extends AppCompatActivity
         // cnx base de données
         BeerTastingHelper helper = new BeerTastingHelper(this);
         mDb = helper.getWritableDatabase();
-        // fake data pour test
-        // TestUtil.insertFakeData(mDb);
 
         // implementation du recyclerview
-        RecyclerView recycler = (RecyclerView) findViewById(R.id.recycler_beers);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        recycler.setLayoutManager(layoutManager);
+        final RecyclerView recycler = (RecyclerView) findViewById(R.id.recycler_beers);
+        mLayoutManager = new LinearLayoutManager(this);
+        recycler.setLayoutManager(mLayoutManager);
         recycler.setHasFixedSize(true);
         //mAdapter = new BeerAdapter(this);
         //recycler.setAdapter(mAdapter);
 
         mAdapter = new BeerListAdapter(this);
         recycler.setAdapter(mAdapter);
+
+        recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                if (mLocal) return;
+                int visibleItemCount = mLayoutManager.getChildCount();
+                int totalItemCount = mLayoutManager.getItemCount();
+                int pastVisibleItems = mLayoutManager.findFirstVisibleItemPosition();
+                if (pastVisibleItems + visibleItemCount >= totalItemCount) {
+                    limitFB += 50;
+                    mFirebaseReference.removeEventListener(mChildEventListener);
+                    mCloudList.clear();
+                    mAdapter.setBeers(mCloudList);
+                    mFirebaseReference.limitToFirst(limitFB).addChildEventListener(mChildEventListener);
+                }
+            }
+
+        });
 
         //recycler.setAdapter(mAdapter);
 
@@ -145,7 +184,7 @@ public class MainActivity extends AppCompatActivity
                         .setMessage("Etes-vous sûr de vouloir supprimer cette dégustation ?")
                         .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                removeBeer(id);
+                                BeersData.removeBeer(mDb, id);
                                 updateLocal();
                                 setAdapterList();
                             }
@@ -160,30 +199,79 @@ public class MainActivity extends AppCompatActivity
             }
         });
         itemTouchHelper.attachToRecyclerView(recycler);
+
+        //firebase
+        mFirebaseDatabase = FirebaseDatabase.getInstance();
+        mFirebaseReference = mFirebaseDatabase.getReference().
+
+                child("beers");
+
+        mChildEventListener = new
+
+                ChildEventListener() {
+                    @Override
+                    public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                        // récuperer CV
+                        BeerFB beer = dataSnapshot.getValue(BeerFB.class);
+                        ContentValues cv = beer.retrieveContentValue();
+                        String key = dataSnapshot.getKey();
+                        // tester ni à ajouter
+                        String selection = BeerTastingContract.BeerTastingEntry.COLUMN_FBASE_ID + " = ?";
+                        Cursor cursor = mDb.query(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, null, selection, new String[]{key}, null, null, null);
+                        if (cursor.getCount() == 0) {
+                            // ajouter biere dans bd
+                            BeersData.addBeerWithKey(mDb, cv, "davy", key);
+                        }
+                        cursor.close();
+
+                        // ajouter dans mCloudList
+                        mCloudList.add(cv);
+                        // ajouter dans adapter
+                        if (!mLocal) {
+                            mAdapter.addBeer(cv);
+                        }
+
+
+                    }
+
+                    @Override
+                    public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                    }
+
+                    @Override
+                    public void onChildRemoved(DataSnapshot dataSnapshot) {
+                    }
+
+                    @Override
+                    public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                    }
+                }
+
+        ;
+
+        mFirebaseReference.limitToFirst(limitFB).
+
+                addChildEventListener(mChildEventListener);
+
+        FBhasListener = true;
     }
 
-    // récupére la liste de toutes les bières
-    // à faire, limiter les colonnes à celles nescessaires
-    // ne pas afficher les bières à supprimer
-    private Cursor getBeerTastings() {
-        return mDb.query(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, null, null, null, null, null, null);
-    }
 
     private ArrayList<ContentValues> getLocalBeerTasting() {
-        Cursor cursor = getBeerTastings();
+        Cursor cursor = DataUtil.getAllBeersFordisplay(mDb);
         ArrayList arrayList = DataUtil.CursorToArray(cursor);
         cursor.close();
         return arrayList;
     }
 
-    private void updateLocal(){
+    private void updateLocal() {
         mLocalList = getLocalBeerTasting();
     }
 
-    // mettre la valeur toDelete à true
-    private boolean removeBeer(long id) {
-        return mDb.delete(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, BeerTastingContract.BeerTastingEntry._ID + " = " + id, null) > 0;
-    }
 
     @Override
     public void onBackPressed() {
@@ -322,53 +410,44 @@ public class MainActivity extends AppCompatActivity
         if (mLocal) {
             tempList = mLocalList;
         } else {
-            tempList = mLocalList;
+            tempList = mCloudList;
         }
 
         mAdapterList.clear();
 
-        for (int i = 0; i < tempList.size(); i++) {
-            String beer;
-            String brewery;
+        if (tempList != null) {
+            for (int i = 0; i < tempList.size(); i++) {
+                String beer;
+                String brewery;
 
-            ContentValues cv = tempList.get(i);
-            beer = cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
-            brewery = cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY);
+                ContentValues cv = tempList.get(i);
+                beer = cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
+                brewery = cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY);
 
-            if (beer.contains(mSearch) || brewery.contains(mSearch)) {
-                mAdapterList.add(cv);
+                if (beer.contains(mSearch) || brewery.contains(mSearch)) {
+                    mAdapterList.add(cv);
+                }
             }
-        }
 
 
-        Collections.sort(mAdapterList, new Comparator() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                Float rating1 = ((ContentValues) o1).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
-                Float rating2 = ((ContentValues) o2).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
-                return rating2.compareTo(rating1);
-            }
-        });
+            Collections.sort(mAdapterList, new Comparator() {
+                @Override
+                public int compare(Object o1, Object o2) {
+                    Float rating1 = ((ContentValues) o1).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
+                    Float rating2 = ((ContentValues) o2).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
+                    return rating2.compareTo(rating1);
+                }
+            });
 
-        Collections.sort(mAdapterList, new Comparator() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                String name1 = ((ContentValues) o1).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
-                String name2 = ((ContentValues) o2).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
-                return name1.compareTo(name2);
-            }
-        });
+            Collections.sort(mAdapterList, new Comparator() {
+                @Override
+                public int compare(Object o1, Object o2) {
+                    String name1 = ((ContentValues) o1).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
+                    String name2 = ((ContentValues) o2).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
+                    return name1.compareTo(name2);
+                }
+            });
 
-        Collections.sort(mAdapterList, new Comparator() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                String date1 = ((ContentValues) o1).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_DATE);
-                String date2 = ((ContentValues) o2).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_DATE);
-                return date1.compareTo(date2);
-            }
-        });
-
-        if (mSort == 0 ){
             Collections.sort(mAdapterList, new Comparator() {
                 @Override
                 public int compare(Object o1, Object o2) {
@@ -378,28 +457,38 @@ public class MainActivity extends AppCompatActivity
                 }
             });
 
-        } else if (mSort == 1){
-            Collections.sort(mAdapterList, new Comparator() {
-                @Override
-                public int compare(Object o1, Object o2) {
-                    String name1 = ((ContentValues) o1).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
-                    String name2 = ((ContentValues) o2).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
-                    return name1.compareTo(name2);
-                }
-            });
-        }else {
-            Collections.sort(mAdapterList, new Comparator() {
-                @Override
-                public int compare(Object o1, Object o2) {
-                    Float rating1 = ((ContentValues) o1).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
-                    Float rating2 = ((ContentValues) o2).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
-                    return rating2.compareTo(rating1);
-                }
-            });
+            if (mSort == 0) {
+                Collections.sort(mAdapterList, new Comparator() {
+                    @Override
+                    public int compare(Object o1, Object o2) {
+                        String date1 = ((ContentValues) o1).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_DATE);
+                        String date2 = ((ContentValues) o2).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_DATE);
+                        return date1.compareTo(date2);
+                    }
+                });
+
+            } else if (mSort == 1) {
+                Collections.sort(mAdapterList, new Comparator() {
+                    @Override
+                    public int compare(Object o1, Object o2) {
+                        String name1 = ((ContentValues) o1).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
+                        String name2 = ((ContentValues) o2).getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
+                        return name1.compareTo(name2);
+                    }
+                });
+            } else {
+                Collections.sort(mAdapterList, new Comparator() {
+                    @Override
+                    public int compare(Object o1, Object o2) {
+                        Float rating1 = ((ContentValues) o1).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
+                        Float rating2 = ((ContentValues) o2).getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
+                        return rating2.compareTo(rating1);
+                    }
+                });
+            }
         }
 
-
-            mAdapter.setBeers(mAdapterList);
+        mAdapter.setBeers(mAdapterList);
         mProgressBar.setVisibility(View.GONE);
     }
 

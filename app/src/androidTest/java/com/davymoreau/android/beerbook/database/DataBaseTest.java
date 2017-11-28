@@ -81,11 +81,10 @@ public class DataBaseTest {
         ContentValues testValues = new ContentValues();
 
         testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_NAME, "beer");
-        testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_PICTURE, "path");
         testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY, "brewery");
         testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_DATE, 0);
         testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_RATING, 0.5);
-        testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_NOTE, "cette bière est bonne");
+        testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_NOTES, "cette bière est bonne");
         testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_DEGREE, 4.7);
         testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_COLOR, 5);
         testValues.put(BeerTastingContract.BeerTastingEntry.COLUMN_FOAM, 5);

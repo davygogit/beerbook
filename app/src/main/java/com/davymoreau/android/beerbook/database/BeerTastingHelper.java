@@ -26,12 +26,11 @@ public class BeerTastingHelper extends SQLiteOpenHelper {
                 BeerTastingContract.BeerTastingEntry.COLUMN_FBASE_ID + " TEXT, " + // ID FireBase, pour syncro
                 BeerTastingContract.BeerTastingEntry.COLUMN_WAIT_DEL + " TEXT, " + // attente de suppression
                 BeerTastingContract.BeerTastingEntry.COLUMN_NAME     + " TEXT, " +
-                BeerTastingContract.BeerTastingEntry.COLUMN_PICTURE  + " TEXT, " + // chemin de l'inmage
                 BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY  + " TEXT, " +
                 BeerTastingContract.BeerTastingEntry.COLUMN_STYLE    + " TEXT, " +
                 BeerTastingContract.BeerTastingEntry.COLUMN_DATE     + " TEXT, " +
                 BeerTastingContract.BeerTastingEntry.COLUMN_RATING   + " REAL, " +
-                BeerTastingContract.BeerTastingEntry.COLUMN_NOTE     + " TEXT, " +
+                BeerTastingContract.BeerTastingEntry.COLUMN_NOTES    + " TEXT, " +
                 BeerTastingContract.BeerTastingEntry.COLUMN_DEGREE   + " REAL, " +
                 BeerTastingContract.BeerTastingEntry.COLUMN_COLOR    + " INTEGER, " + // id de la couleur
                 BeerTastingContract.BeerTastingEntry.COLUMN_FOAM     + " INTEGER, " +
@@ -57,7 +56,7 @@ public class BeerTastingHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        sqLiteDatabase.execSQL("DROP TABLE IF EXIST " + BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME);
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME);
         onCreate(sqLiteDatabase);
     }
 }

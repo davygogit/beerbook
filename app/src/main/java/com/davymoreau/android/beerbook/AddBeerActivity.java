@@ -25,6 +25,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.davymoreau.android.beerbook.beersData.BeersData;
 import com.davymoreau.android.beerbook.database.BeerTastingContract;
 import com.davymoreau.android.beerbook.database.BeerTastingHelper;
 import com.davymoreau.android.beerbook.util.FileUtil;
@@ -557,6 +558,9 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
 
         Log.d("debug !!!!!", "nom: " + name + " brasserie: " + brewery + " alcohol: " + alcohol + " style: " + style + " date: " + today);
         ContentValues cv = new ContentValues();
+
+
+
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_NAME, name);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY, brewery);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_DEGREE, alcohol);
@@ -564,7 +568,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_DATE, today);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_COLOR, color);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_RATING, rating);
-        cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_NOTE, note);
+        cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_NOTES, note);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_FOAM, foamId);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_SERVICE, servingId);
 
@@ -580,7 +584,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL, sbAlcohol.getProgress());
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_BODY, sbBody.getProgress());
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER, sbLinger.getProgress());
-        DbId =(int) (mDb.insert(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, null, cv));
+        DbId = BeersData.addBeer(mDb, cv, "davy");
 
         // save picture
 
@@ -665,8 +669,8 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
             cropIntent.putExtra("outputY", 256);
 
             cropIntent.putExtra("output", cropUri);
-            // retrieve data on return
-            cropIntent.putExtra("return-data", true);
+            // retrieve Data on return
+            cropIntent.putExtra("return-Data", true);
             // start the activity - we handle returning in onActivityResult
             startActivityForResult(cropIntent, CROP_PIC);
         }

@@ -63,7 +63,7 @@ public class BeerDetailActivity extends AppCompatActivity {
         // rating
         float rating = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
         // notes
-        String notes = contentValues.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NOTE);
+        String notes = contentValues.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NOTES);
         // degree
         float degree = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_DEGREE);
         // color

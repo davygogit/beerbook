@@ -15,11 +15,10 @@ public class BeerTastingContract {
         public static final String COLUMN_WAIT_DEL  = "waitForDeletion";
 
         public static final String COLUMN_NAME      = "name";
-        public static final String COLUMN_PICTURE   = "picture";
         public static final String COLUMN_BREWERY   = "brewery";
         public static final String COLUMN_DATE      = "date";
         public static final String COLUMN_RATING    = "rating";
-        public static final String COLUMN_NOTE      = "note";
+        public static final String COLUMN_NOTES     = "notes";
         public static final String COLUMN_DEGREE    = "degree";
         public static final String COLUMN_COLOR     = "color";
         public static final String COLUMN_FOAM      = "foam";
@@ -31,7 +30,7 @@ public class BeerTastingContract {
         public static final String COLUMN_SWEET     = "sweet";
         public static final String COLUMN_CEREAL    = "cereal";
         public static final String COLUMN_TOFFEE    = "toffee";
-        public static final String COLUMN_COFFEE    = "cofe";
+        public static final String COLUMN_COFFEE    = "coffee";
         public static final String COLUMN_HERB      = "herb";
         public static final String COLUMN_FRUIT     = "fruit";
         public static final String COLUMN_SPICE     = "spice";

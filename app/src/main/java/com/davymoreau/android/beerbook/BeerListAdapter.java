@@ -46,6 +46,11 @@ public class BeerListAdapter extends RecyclerView.Adapter<BeerListAdapter.BeerHo
         if(mList != null) notifyDataSetChanged();
     }
 
+    public void addBeer(ContentValues cv){
+        mList.add(cv);
+        notifyDataSetChanged();
+    }
+
     @Override
     public BeerHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         mContext = parent.getContext();
@@ -84,10 +89,16 @@ public class BeerListAdapter extends RecyclerView.Adapter<BeerListAdapter.BeerHo
         float rating = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
         holder.mRating.setRating(rating);
         //id
-        long id = (long)contentValues.getAsLong(BeerTastingContract.BeerTastingEntry._ID);
-        holder.itemView.setTag(id);
+        if (contentValues.containsKey(BeerTastingContract.BeerTastingEntry._ID)) {
+            long id = (long) contentValues.getAsLong(BeerTastingContract.BeerTastingEntry._ID);
+            holder.itemView.setTag(id);
+        }
         // pic
-        String pic = contentValues.getAsString("picpath");
+        String pic = "";
+
+        if(contentValues.containsKey("picpath")) {
+            pic = contentValues.getAsString("picpath");
+        }
         File file = new File(pic);
 
         if (file.exists()) {

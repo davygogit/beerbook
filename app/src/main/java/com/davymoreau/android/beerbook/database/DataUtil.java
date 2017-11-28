@@ -1,10 +1,10 @@
-package com.davymoreau.android.beerbook.util;
+package com.davymoreau.android.beerbook.database;
 
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 
 import com.davymoreau.android.beerbook.constApp;
-import com.davymoreau.android.beerbook.database.BeerTastingContract;
 
 import java.util.ArrayList;
 
@@ -12,7 +12,35 @@ import java.util.ArrayList;
  * Created by davy on 13/11/2017.
  */
 
+
+
 public class DataUtil {
+
+    public static boolean removeBeer(SQLiteDatabase db, long id) {
+        return db.delete(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, BeerTastingContract.BeerTastingEntry._ID + " = " + id, null) > 0;
+    }
+
+    public static final Cursor getAllBeers(SQLiteDatabase db) {
+        return db.query(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, null, null, null, null, null, null);
+    }
+
+    public static final Cursor getAllBeersFordisplay(SQLiteDatabase db) {
+        String whereClause =  BeerTastingContract.BeerTastingEntry.COLUMN_WAIT_DEL + " = ?";
+        String[] whereArgs = new String[]{
+                 "FALSE"
+        };
+        Cursor cursor = db.query(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, null, whereClause, whereArgs, null, null, null);
+        return cursor;    }
+
+    public static final Cursor getAllNewBeers(SQLiteDatabase db) {
+
+        String whereClause = BeerTastingContract.BeerTastingEntry.COLUMN_FBASE_ID  + " = ? AND " + BeerTastingContract.BeerTastingEntry.COLUMN_WAIT_DEL + " = ?";
+        String[] whereArgs = new String[]{
+          "", "FALSE"
+        };
+        Cursor cursor = db.query(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, null, whereClause, whereArgs, null, null, null);
+        return cursor;
+    }
 
     public static final ArrayList CursorToArray(Cursor cursor) {
         ArrayList<ContentValues> list = new ArrayList<>();
@@ -48,7 +76,7 @@ public class DataUtil {
             float rating = cursor.getFloat(cursor.getColumnIndex(ratingEntry));
             cv.put(ratingEntry, rating);
             // notes
-            String notesEntry = BeerTastingContract.BeerTastingEntry.COLUMN_NOTE;
+            String notesEntry = BeerTastingContract.BeerTastingEntry.COLUMN_NOTES;
             String note = cursor.getString(cursor.getColumnIndex(notesEntry));
             cv.put(notesEntry, note);
             // color
@@ -120,9 +148,6 @@ public class DataUtil {
 
             cursor.moveToNext();
         }
-
-        cursor.close();
-
         return list;
     }
 }

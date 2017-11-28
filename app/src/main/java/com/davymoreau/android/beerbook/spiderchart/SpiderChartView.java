@@ -152,7 +152,7 @@ public class SpiderChartView extends View {
 
                 canvas.drawText(label, Xlabel + shiftX, Ylabel +  shiftY, mLabelPaint);
 
-                // data
+                // Data
                 float value = cv.getAsFloat(VALUE);
                 float valueRadius = (radius / mMaxValue) * value;
                 int XPath = (int) (Math.cos(angle) * valueRadius) + centerX;
