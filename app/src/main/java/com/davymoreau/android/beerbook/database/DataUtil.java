@@ -4,8 +4,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
-import com.davymoreau.android.beerbook.constApp;
-
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -42,7 +41,7 @@ public class DataUtil {
         return cursor;
     }
 
-    public static final ArrayList CursorToArray(Cursor cursor) {
+    public static final ArrayList CursorToArray(Cursor cursor, File dir) {
         ArrayList<ContentValues> list = new ArrayList<>();
         if (cursor == null) return list;
 
@@ -54,8 +53,12 @@ public class DataUtil {
             long id = cursor.getLong(cursor.getColumnIndex(idEntry));
             cv.put(idEntry, id);
             // path picture
-            cv.put("picpath", constApp.DIR.getPath() + "/" + String.valueOf(id)+ ".jpg");
-            // name
+            String path = dir.getPath() + "/" + String.valueOf(id)+ ".jpg";
+            File file = new File(path);
+            if(file.exists()){
+                cv.put("picpath", path);
+            }
+                        // name
             String nameEntry = BeerTastingContract.BeerTastingEntry.COLUMN_NAME;
             String name = cursor.getString(cursor.getColumnIndex(nameEntry));
             cv.put(nameEntry, name);

@@ -4,13 +4,21 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -29,6 +37,7 @@ import com.davymoreau.android.beerbook.beersData.BeersData;
 import com.davymoreau.android.beerbook.database.BeerTastingContract;
 import com.davymoreau.android.beerbook.database.BeerTastingHelper;
 import com.davymoreau.android.beerbook.util.FileUtil;
+import com.soundcloud.android.crop.Crop;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -37,10 +46,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 
-import static android.R.attr.name;
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static com.davymoreau.android.beerbook.constApp.STYLES_FILE;
 
+//import static com.davymoreau.android.beerbook.constApp.DIR;
+
 public class AddBeerActivity extends AppCompatActivity implements View.OnClickListener {
+
+    Activity activity;
+
+    MenuItem actionAdd;
+
+    String mUserId;
 
     SQLiteDatabase mDb;
 
@@ -54,8 +72,6 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
     TextView tvFoam;
     TextView tvServing;
     RatingBar rbRating;
-
-
     TextView tvAcidity;
     SeekBar sbAcidity;
     TextView tvBitter;
@@ -80,46 +96,127 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
     SeekBar sbBody;
     TextView tvLinger;
     SeekBar sbLinger;
-
-
     Spinner spinner;
 
     File photoTemp;
     File photoCrop;
-    File dir;
 
     int foamId = 0;
     int servingId = 0;
-    int DbId;
+    int DbId = -1;
 
     ArrayList<String> stylesList;
 
     private Uri tempUri;
+    private Uri tempContentUri;
     private Uri cropUri;
+    private Uri cropContentUri;
 
     private static final int TAKE_PICTURE = 2;
     private static final int CROP_PIC = 3;
+    public static final int MY_PERMISSIONS_REQUEST_CAMERA = 0;
     private static final int FOAM = 4;
     private static final int SERVING = 5;
 
+    // Storage Permissions
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            WRITE_EXTERNAL_STORAGE,
+            READ_EXTERNAL_STORAGE
+    };
+
     int foam = 1;
+
+    File tdir ;
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
     }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        photoCrop.delete();
-    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_beer);
 
+        activity = AddBeerActivity.this;
+        Camerapermission();
+       verifyStoragePermissions(this);
+
+        tdir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
+
+        // récupération cv
+        ContentValues contentValues = null;
+        Intent myItent = getIntent();
+
+        // id author
+        mUserId = "";
+        if (myItent.hasExtra("auth")) {
+            mUserId = myItent.getStringExtra("auth");
+        }
+
+        //  init bdd
+        BeerTastingHelper helper = new BeerTastingHelper(this);
+        mDb = helper.getWritableDatabase();
+
+        // get views
+        getViews();
+
+        // prefill si mode modification
+        if (myItent.hasExtra("id")) {
+            contentValues = myItent.getParcelableExtra("cv");
+            DbId = myItent.getIntExtra("id", 0);
+            prefill(contentValues);
+
+        }
+        // gestion photo
+        getPicture();
+
+        // btn ajout
+        Button btAdd = (Button) findViewById(R.id.bt_add);
+        btAdd.setOnClickListener(this);
+
+    }
+
+    private void getPicture() {
+
+        photoCrop = new File(tdir, "crop.jpg");
+        cropUri = Uri.fromFile(photoCrop);
+        cropContentUri = FileProvider.getUriForFile(this,
+                BuildConfig.APPLICATION_ID + ".fileprovider",
+                photoCrop);
+
+     /*   photoTemp = new File(tdir, "temp.jpg");
+        tempUri = Uri.fromFile(photoTemp);
+        tempContentUri = FileProvider.getUriForFile(this,
+                BuildConfig.APPLICATION_ID + ".fileprovider",
+                photoTemp);
+
+*/
+
+
+        if (photoCrop.exists()) {
+            Glide.with(this)
+                    .load(cropUri)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(imageView);
+        }
+
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                intent.putExtra(MediaStore.EXTRA_OUTPUT, cropContentUri);
+                startActivityForResult(intent, TAKE_PICTURE);
+            }
+        });
+    }
+
+    private void getViews() {
         // récupère la liste des styles
         stylesList = FileUtil.InternalStorageToArray(this, STYLES_FILE);
         Collections.sort(stylesList, new Comparator<String>() {
@@ -132,6 +229,30 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
 
         // nom de la bière
         edName = (EditText) findViewById(R.id.ed_beer_name);
+        edName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (actionAdd !=null) {
+                    if (s.length() == 0) {
+                        actionAdd.setEnabled(false);
+                        actionAdd.getIcon().setAlpha(100);
+                    } else {
+                        actionAdd.setEnabled(true);
+                        actionAdd.getIcon().setAlpha(255);
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
         // nom de la brasseri
         edBrewery = (EditText) findViewById(R.id.ed_brewery);
         // degree d'alcool
@@ -206,7 +327,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         updateServing();
 
         // rating
-        rbRating = (RatingBar)findViewById(R.id.ratting);
+        rbRating = (RatingBar) findViewById(R.id.ratting);
 
         // acidité
         tvAcidity = (TextView) findViewById(R.id.tv_acid);
@@ -418,8 +539,8 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         updateSeekBar(tvAlcohol, sbAlcohol, R.string.alcohol);
 
         // corps
-        tvBody= (TextView) findViewById(R.id.tv_body);
-        sbBody= (SeekBar) findViewById(R.id.sb_body);
+        tvBody = (TextView) findViewById(R.id.tv_body);
+        sbBody = (SeekBar) findViewById(R.id.sb_body);
         sbBody.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -439,8 +560,8 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         updateSeekBar(tvBody, sbBody, R.string.body);
 
         // persistance
-        tvLinger= (TextView) findViewById(R.id.tv_linger);
-        sbLinger= (SeekBar) findViewById(R.id.sb_linger);
+        tvLinger = (TextView) findViewById(R.id.tv_linger);
+        sbLinger = (SeekBar) findViewById(R.id.sb_linger);
         sbLinger.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -458,33 +579,6 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
             }
         });
         updateSeekBar(tvLinger, sbLinger, R.string.linger);
-
-       dir = Environment.getExternalStorageDirectory();
-
-        photoTemp = new File(dir, "temp.jpg");
-        tempUri = Uri.fromFile(photoTemp);
-        photoCrop = new File(dir, "crop.jpg");
-        cropUri = Uri.fromFile(photoCrop);
-        if (photoCrop.exists()) {
-            Glide.with(this)
-                    .load(cropUri)
-                    .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .skipMemoryCache(true)
-                    .into(imageView);
-        }
-
-
-        imageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, tempUri);
-                startActivityForResult(intent, TAKE_PICTURE);
-
-
-            }
-        });
-
 
         ArrayList<Color> colors = new ArrayList<>();
         colors.add(new Color(getString(R.string.pale_straw), 0xfff0c566));
@@ -504,16 +598,6 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
 
         spinner = (Spinner) findViewById(R.id.spinner);
         spinner.setAdapter(colorAdapter);
-
-
-        Button btAdd = (Button) findViewById(R.id.bt_add);
-
-
-        BeerTastingHelper helper = new BeerTastingHelper(this);
-        mDb = helper.getWritableDatabase();
-
-        btAdd.setOnClickListener(this);
-
     }
 
     @Override
@@ -527,12 +611,26 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
             stylesList.add(style);
             FileUtil.ArrayToInternalStorage(this, stylesList, STYLES_FILE);
         }
-        Toast.makeText(AddBeerActivity.this, "bière " + name + " ajoutée", Toast.LENGTH_SHORT).show();
+        Toast.makeText(AddBeerActivity.this, "bière " + edName.getText() + " ajoutée", Toast.LENGTH_SHORT).show();
         photoCrop.delete();
         finish();
     }
 
-    private void saveData(){
+    private void saveAndExit(){
+        String style = edStyle.getText().toString();
+
+        saveData();
+
+        if (!stylesList.contains(style)) {
+            stylesList.add(style);
+            FileUtil.ArrayToInternalStorage(this, stylesList, STYLES_FILE);
+        }
+        Toast.makeText(AddBeerActivity.this, "bière " + edName.getText() + " ajoutée", Toast.LENGTH_SHORT).show();
+        photoCrop.delete();
+        finish();
+    }
+
+    private void saveData() {
         Date date = new Date();
         date.getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -547,7 +645,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         }
         double alcohol = Double.valueOf(strAlcohol);
 
-        int color = (int)(spColor.getSelectedItemId());
+        int color = (int) (spColor.getSelectedItemId());
 
         float rating = rbRating.getRating();
 
@@ -555,11 +653,8 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
 
         int serving = servingId;
 
-
         Log.d("debug !!!!!", "nom: " + name + " brasserie: " + brewery + " alcohol: " + alcohol + " style: " + style + " date: " + today);
         ContentValues cv = new ContentValues();
-
-
 
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_NAME, name);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY, brewery);
@@ -584,17 +679,44 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL, sbAlcohol.getProgress());
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_BODY, sbBody.getProgress());
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER, sbLinger.getProgress());
-        DbId = BeersData.addBeer(mDb, cv, "davy");
 
-        // save picture
+        if (DbId >= 0)
+            BeersData.removeBeer(mDb, DbId, tdir);
+        
+        DbId = BeersData.addBeer(mDb, cv, mUserId, tdir);
 
-        File dest =  new File(dir, String.valueOf(DbId) + ".jpg");
-        if (!photoCrop.renameTo(dest)){
-            Toast.makeText(this, "merde lors du renomage", Toast.LENGTH_SHORT).show();
+
+
+        //deleteCrop();
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+        if (id == R.id.action_add){
+            saveAndExit();
+
+        } else if (id == R.id.action_close){
+            photoCrop.delete();
+            finish();
         }
 
+        return super.onOptionsItemSelected(item);
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_add_beer, menu);
+        actionAdd = menu.findItem(R.id.action_add);
+        // prefill si mode modification
+        if (DbId < 0){
+            actionAdd.setEnabled(false);
+            actionAdd.getIcon().setAlpha(100);
+        }
 
+        return true;
     }
 
     @Override
@@ -604,7 +726,6 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
             case TAKE_PICTURE:
                 if (resultCode == Activity.RESULT_OK) {
                     try {
-
                         performCrop();
 
                     } catch (Exception e) {
@@ -614,16 +735,21 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
                     }
                 }
                 break;
-            case CROP_PIC: {
+            case Crop.REQUEST_CROP: {
                 try {
 
-                    Glide.with(this)
-                            .load(cropUri)
-                            .diskCacheStrategy(DiskCacheStrategy.NONE)
-                            .skipMemoryCache(true)
-                            .into(imageView);
 
-                    photoTemp.delete();
+                    if (photoCrop.exists()){
+
+                        Glide.with(this)
+                                .load(photoCrop)
+                                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                .skipMemoryCache(true)
+                                .into(imageView);
+
+                       // photoTemp.delete();
+                    }
+
 
 
                 } catch (Exception e) {
@@ -652,13 +778,36 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
      * this function does the crop operation.
      */
     private void performCrop() {
+        Crop.of(cropContentUri, cropContentUri).asSquare().start(activity);
+
+    }
+
+
+    private void performCrop_() {
         // take care of exceptions
         try {
+
+            cropContentUri = FileProvider.getUriForFile(this,
+                    BuildConfig.APPLICATION_ID + ".fileprovider",
+                    photoCrop);
+
+
+            this.grantUriPermission("com.android.camera",cropContentUri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+
             // call the standard crop action intent (the user device may not
             // support it)
             Intent cropIntent = new Intent("com.android.camera.action.CROP");
+
+
+
             // indicate image type and Uri
-            cropIntent.setDataAndType(tempUri, "image/*");
+            cropIntent.setDataAndType(cropContentUri, "image/*");
+
+            cropIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            cropIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
             // set crop properties
             cropIntent.putExtra("crop", "true");
             // indicate aspect of desired crop
@@ -668,9 +817,11 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
             cropIntent.putExtra("outputX", 256);
             cropIntent.putExtra("outputY", 256);
 
-            cropIntent.putExtra("output", cropUri);
             // retrieve Data on return
             cropIntent.putExtra("return-Data", true);
+
+            cropIntent.putExtra("output", cropContentUri);
+
             // start the activity - we handle returning in onActivityResult
             startActivityForResult(cropIntent, CROP_PIC);
         }
@@ -716,6 +867,43 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         tvServing.setText(sServ);
     }
 
+    private void prefill(ContentValues cv) {
+        edAlcohol.setText(cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL));
+        edName.setText(cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME));
+        edBrewery.setText(cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY));
+        edStyle.setText(cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_STYLE));
+        spColor.setSelection(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_COLOR));
+
+        File pic = new File(tdir, DbId + ".jpg");
+        if (pic.exists()) {
+            try {
+                FileUtil.copy(pic, photoCrop);
+            } catch (Exception e) {
+
+            }
+        }
+        edNote.setText(cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NOTES));
+        foamId = cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_FOAM);
+        updateFoam();
+        servingId = cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_SERVICE);
+        updateServing();
+        rbRating.setRating(cv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING));
+
+        sbAcidity.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_ACID));
+        sbBitter.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_BITTER));
+        sbSweet.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_SWEET));
+        sbCereal.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_CEREAL));
+        sbToffee.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_TOFFEE));
+        sbCoffee.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_COFFEE));
+        sbHerb.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_HERB));
+        sbFruit.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_FRUIT));
+        sbSpice.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_SPICE));
+        sbAlcohol.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL));
+        sbBody.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_BODY));
+        sbLinger.setProgress(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER));
+
+
+    }
 
     private void updateSeekBar(TextView tv, SeekBar sb, int name) {
         int progress = sb.getProgress();
@@ -729,16 +917,65 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
 
     }
 
-    public void test(View view){
+    public void test(View view) {
         saveData();
         Intent intent = new Intent(this, addtestActivity.class);
         intent.putExtra("id", DbId);
         startActivity(intent);
     }
 
-    private void deleteCrop(){
-        File crop = new File(dir, "crop.jpg");
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        photoCrop.delete();
+    }
+   /* private void deleteCrop() {
+        File crop = new File(DIR, "crop.jpg");
         crop.delete();
+    }*/
+
+    private void Camerapermission() {
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(activity
+                ,
+                android.Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(activity,
+                    android.Manifest.permission.CAMERA)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(activity,
+                        new String[]{android.Manifest.permission.CAMERA},
+                        MY_PERMISSIONS_REQUEST_CAMERA);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
+    }
+
+    public static void verifyStoragePermissions(Activity activity) {
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(activity, WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    activity,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
     }
 }
 

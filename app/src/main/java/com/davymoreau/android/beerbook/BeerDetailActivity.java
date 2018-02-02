@@ -1,14 +1,15 @@
 package com.davymoreau.android.beerbook;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -21,11 +22,16 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.davymoreau.android.beerbook.database.BeerTastingContract;
 import com.davymoreau.android.beerbook.spiderchart.SpiderChartView;
+
 import java.io.File;
 import java.util.ArrayList;
 
 public class BeerDetailActivity extends AppCompatActivity {
 
+    long mId;
+    boolean mModifiable = false;
+    Context mContext;
+    ContentValues mCv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,75 +39,76 @@ public class BeerDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_beer_detail);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        mContext = this;
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-        // recupération contentvalue
-
+        /*View appBar =  findViewById(R.id.app_bar);
+        appBar.getLayoutParams().height = appBar.getWidth();
+        appBar.requestLayout();*/
 
         // récupération cv
-        ContentValues contentValues = null;
+        //ContentValues mCv = null;
         Intent myItent = getIntent();
         if (myItent.hasExtra("cv")) {
-            contentValues = myItent.getParcelableExtra("cv");
+            mCv = myItent.getParcelableExtra("cv");
         }
         // récupération id
-        long id = contentValues.getAsLong(BeerTastingContract.BeerTastingEntry._ID);
+        if (mCv.containsKey(BeerTastingContract.BeerTastingEntry._ID)) {
+            mId = mCv.getAsLong(BeerTastingContract.BeerTastingEntry._ID);
+            mModifiable = true;
+        }
+
+        String path = mCv.getAsString("path");
         // nom bière
-        String beerName = contentValues.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
+        String beerName = mCv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
         // brasserie
-        String brewery = contentValues.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY);
+        String brewery = mCv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY);
         // date
-        String date = contentValues.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_DATE);
+        String date = mCv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_DATE);
         // rating
-        float rating = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
+        float rating = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_RATING);
         // notes
-        String notes = contentValues.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NOTES);
+        String notes = mCv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NOTES);
         // degree
-        float degree = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_DEGREE);
+        float degree = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_DEGREE);
         // color
-        Integer color = contentValues.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_COLOR);
+        Integer color = mCv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_COLOR);
         // foam
-        Integer foam = contentValues.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_FOAM);
+        Integer foam = mCv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_FOAM);
         // serving
-        Integer serving = contentValues.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_SERVICE);
+        Integer serving = mCv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_SERVICE);
         // style
-        String style = contentValues.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_STYLE);
+        String style = mCv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_STYLE);
         // flavours
-        float acid = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_ACID);
-        float bitter = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_BITTER);
-        float sweet = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_SWEET);
-        float cereal = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_CEREAL);
-        float toffee = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_TOFFEE);
-        float coffee = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_COFFEE);
-        float herb = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_HERB);
-        float fruit = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_FRUIT);
-        float spice = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_SPICE);
-        float alcohol = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL);
-        float body = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_BODY);
-        float linger = contentValues.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER);
+        float acid = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_ACID);
+        float bitter = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_BITTER);
+        float sweet = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_SWEET);
+        float cereal = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_CEREAL);
+        float toffee = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_TOFFEE);
+        float coffee = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_COFFEE);
+        float herb = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_HERB);
+        float fruit = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_FRUIT);
+        float spice = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_SPICE);
+        float alcohol = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL);
+        float body = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_BODY);
+        float linger = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER);
 
 
         // maj image
-       ImageView ivBeer = (ImageView) findViewById(R.id.ivct_beer);
-        File fileImg = new File(constApp.DIR, String.valueOf(id) + ".jpg");
-        ProgressBar progress = (ProgressBar)findViewById(R.id.progressBar_detail);
+        ImageView ivBeer = (ImageView) findViewById(R.id.ivct_beer);
+        //ivBeer.getLayoutParams().height = ivBeer.getWidth();
+        //ivBeer.requestLayout();
+        File fileImg = new File(path);
+        ProgressBar progress = (ProgressBar) findViewById(R.id.progressBar_detail);
         progress.setVisibility(View.VISIBLE);
         progress.bringToFront();
-         if (fileImg.exists()) {
+        if (fileImg.exists()) {
             Uri uri = Uri.fromFile(fileImg);
 
             Glide.with(this)
                     .load(uri)
                     .listener(new RequestListener<Uri, GlideDrawable>() {
-                        ProgressBar progressBar = (ProgressBar)findViewById(R.id.progressBar_detail);
+                        ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar_detail);
+
                         @Override
                         public boolean onException(Exception e, Uri model, Target<GlideDrawable> target, boolean isFirstResource) {
                             progressBar.setVisibility(View.GONE);
@@ -115,9 +122,8 @@ public class BeerDetailActivity extends AppCompatActivity {
                         }
                     })
                     .into(ivBeer);
-        }
-        else {
-            Drawable drawable  = getResources().getDrawable(R.drawable.biere);
+        } else {
+            Drawable drawable = getResources().getDrawable(R.drawable.biere);
             ivBeer.setImageDrawable(drawable);
             progress.setVisibility(View.GONE);
         }
@@ -130,10 +136,10 @@ public class BeerDetailActivity extends AppCompatActivity {
         TextView tvNotes = (TextView) findViewById(R.id.tv_detail_notes);
         tvNotes.setText(notes);
         // date
-        TextView tvDate = (TextView)findViewById(R.id.tv_detail_date);
+        TextView tvDate = (TextView) findViewById(R.id.tv_detail_date);
         tvDate.setText(date);
         // style
-        TextView tvStyle = (TextView)findViewById(R.id.tv_detail_style);
+        TextView tvStyle = (TextView) findViewById(R.id.tv_detail_style);
         tvStyle.setText(style);
         // ratting
         RatingBar ratingBar = (RatingBar) findViewById(R.id.ratingBar_detail);
@@ -191,9 +197,32 @@ public class BeerDetailActivity extends AppCompatActivity {
         cv.put("value", linger);
         cvList.add(cv);
 
-        SpiderChartView spiderChartView = (SpiderChartView)findViewById(R.id.spider);
+        SpiderChartView spiderChartView = (SpiderChartView) findViewById(R.id.spider);
 
         spiderChartView.setData(cvList);
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.inflateMenu(R.menu.menu_beer_detail);
+        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                //TODO: Write your logic here
+                if (menuItem.getItemId() == R.id.action_edit) {
+                    Intent intent = new Intent(mContext, AddBeerActivity.class);
+                    intent.putExtra("id", mId);
+                    intent.putExtra("cv", mCv);
+                    startActivity(intent);
+                }
+                return true;
+            }
+        });
+
+        return true;
     }
 }

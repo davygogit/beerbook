@@ -6,10 +6,19 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:background="@color/cardview_dark_background"
-    android:elevation="10dp"
-    card_view:cardCornerRadius="4dp"
 
+    android:layout_marginBottom="0dp"
+    android:layout_marginLeft="4dp"
+    android:layout_marginRight="4dp"
+    android:layout_marginTop="4dp"
+    android:background="@color/cardview_dark_background"
+    android:elevation="24dp"
+    android:paddingBottom="0dp"
+    android:paddingLeft="4dp"
+    android:paddingRight="4dp"
+    android:paddingTop="4dp"
+    card_view:cardCornerRadius="4dp"
+    card_view:cardElevation="4dp"
     card_view:contentPadding="4dp">
 
     <android.support.constraint.ConstraintLayout
@@ -32,40 +41,41 @@
             android:id="@+id/tv_beer_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            card_view:layout_constraintLeft_toRightOf="@+id/iv_beer"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
-            card_view:layout_constraintRight_toRightOf="parent"
-            card_view:layout_constraintTop_toTopOf="parent"
             android:layout_marginTop="8dp"
             android:fontFamily="monospace"
-            tools:text="Nom Bière"
             android:textAppearance="@style/Base.TextAppearance.AppCompat.Large"
             android:textSize="24sp"
-            android:textStyle="bold"/>
+            android:textStyle="bold"
+            card_view:layout_constraintLeft_toRightOf="@+id/iv_beer"
+            card_view:layout_constraintRight_toRightOf="parent"
+            card_view:layout_constraintTop_toTopOf="parent"
+            tools:text="Nom Bière" />
 
         <TextView
             android:id="@+id/tv_brewery"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            tools:text="Brasserie Bière"
-            android:layout_marginTop="8dp"
-            card_view:layout_constraintTop_toBottomOf="@+id/tv_beer_name"
-            card_view:layout_constraintLeft_toRightOf="@+id/iv_beer"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
-            card_view:layout_constraintRight_toRightOf="parent" />
+            android:layout_marginTop="8dp"
+            card_view:layout_constraintLeft_toRightOf="@+id/iv_beer"
+            card_view:layout_constraintRight_toRightOf="parent"
+            card_view:layout_constraintTop_toBottomOf="@+id/tv_beer_name"
+            tools:text="Brasserie Bière" />
 
         <TextView
             android:id="@+id/tv_alcohol"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            tools:text="5,8°"            card_view:layout_constraintLeft_toRightOf="@+id/iv_beer"
             android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
             android:layout_marginTop="4dp"
-            card_view:layout_constraintTop_toBottomOf="@+id/tv_brewery"
+            card_view:layout_constraintLeft_toRightOf="@+id/iv_beer"
             card_view:layout_constraintRight_toLeftOf="@+id/ratingBar"
-            android:layout_marginRight="8dp" />
+            card_view:layout_constraintTop_toBottomOf="@+id/tv_brewery"
+            tools:text="5,8°" />
 
         <RatingBar
             android:id="@+id/ratingBar"
@@ -73,13 +83,13 @@
 
             android:layout_width="wrap_content"
             android:layout_height="16dp"
-            card_view:layout_constraintTop_toTopOf="@+id/tv_alcohol"
-            android:layout_marginTop="0dp"
             android:layout_marginRight="8dp"
-            card_view:layout_constraintRight_toRightOf="parent"
+            android:layout_marginTop="0dp"
             android:numStars="5"
             android:rating="3"
-            android:stepSize="0.5"/>
+            android:stepSize="0.5"
+            card_view:layout_constraintRight_toRightOf="parent"
+            card_view:layout_constraintTop_toTopOf="@+id/tv_alcohol" />
 
         <ProgressBar
             android:id="@+id/progressBarItem"

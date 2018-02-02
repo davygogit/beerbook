@@ -37,8 +37,7 @@
                 android:layout_width="0dp"
                 android:layout_height="34dp"
                 android:layout_marginLeft="4dp"
-                android:layout_marginRight="0dp"
-                android:layout_marginTop="0dp"
+                android:inputType="textCapSentences"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintLeft_toRightOf="@+id/ivAddBeer"
@@ -71,7 +70,8 @@
 
         <EditText
             android:id="@+id/ed_brewery"
-            style="@style/AddTxtBox" />
+            style="@style/AddTxtBox"
+            android:inputType="textCapSentences" />
 
         <TextView
             android:layout_width="match_parent"
@@ -123,6 +123,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:inputType="text|textCapSentences|textAutoCorrect|textAutoComplete"
             android:text="@string/note" />
 
         <EditText
@@ -130,7 +131,7 @@
             style="@style/AddTxtBox"
             android:gravity="top|left"
             android:hint="@string/noteHint"
-            android:inputType="textMultiLine"
+            android:inputType="textCapSentences|textMultiLine"
             android:maxLines="3" />
 
         <TextView
@@ -308,16 +309,16 @@
             android:layout_height="wrap_content"
             android:paddingTop="8dp"
             android:text="Ajouter"
-            />
+            android:visibility="gone" />
 
         <Button
             android:id="@+id/bt_test"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"
             android:onClick="test"
+            android:paddingTop="8dp"
             android:text="tester"
-            />
+            android:visibility="gone" />
 
     </LinearLayout>
 

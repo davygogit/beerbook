@@ -6,6 +6,7 @@
 
     <string name="action_settings">Settings</string>
     <string name="action_search">Search</string>
+    <string name="action_edit">edit</string>
 
     <string name="beerName">Beer name</string>
     <string name="brewery">Brewery</string>
@@ -60,6 +61,13 @@
 
 
     <string name="title_activity_beer_detail">BeerDetailActivity</string>
+
+    <string name="first_login_text">
+        "Connect allows :\n"
+        "- To share your book between multiple devices.\n"
+        "- To save yout book online.\n"
+        "- To share your tasting sheets with the world."
+    </string>
 
     <string name="large_text">
         "Material is the metaphor.\n\n"

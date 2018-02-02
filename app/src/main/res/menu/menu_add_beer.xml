@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_add"
+        android:icon="@drawable/ic_check_24dp"
+        android:orderInCategory="102"
+        android:title="Item"
+        app:showAsAction="always"
+        tools:icon="@drawable/ic_check_24dp" />
+
+    <item
+        android:id="@+id/action_close"
+        android:icon="@drawable/ic_close_24dp"
+        android:orderInCategory="102"
+        android:title="Item"
+        app:showAsAction="always"
+        tools:icon="@drawable/ic_close_24dp" />
+</menu>

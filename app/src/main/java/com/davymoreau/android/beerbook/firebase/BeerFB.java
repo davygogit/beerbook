@@ -14,8 +14,8 @@ public class BeerFB {
 
     }
 
-    public BeerFB(ContentValues cv, String author){
-        auth    = author;
+    public BeerFB(ContentValues cv, String uid){
+        userID = uid;
         name    = cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
         Brewery = cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_BREWERY);
         date    = cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_DATE);
@@ -36,7 +36,11 @@ public class BeerFB {
         fruit   = cv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_FRUIT);
         spice   = cv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_SPICE);
         alcohol = cv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL);
+        linger  = cv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER);
+        body    = cv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_BODY);
     }
+
+
 
     public ContentValues retrieveContentValue(){
         ContentValues cv = new ContentValues();
@@ -60,12 +64,14 @@ public class BeerFB {
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_FRUIT,fruit);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_SPICE,spice);
         cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_ALCOHOL,alcohol);
+        cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER, linger);
+        cv.put(BeerTastingContract.BeerTastingEntry.COLUMN_BODY, body);
 
         return cv;
 
     }
 
-    private String auth;
+    private String userID;
     private String name;
     private String Brewery;
     private String date;
@@ -86,13 +92,39 @@ public class BeerFB {
     private float fruit;
     private float spice;
     private float alcohol;
+    private float linger;
+    private float body;
 
-    public String getAuth() {
-        return auth;
+    public float getRating() {
+        return rating;
     }
 
-    public void setAuth(String auth) {
-        this.auth = auth;
+    public void setRating(float rating) {
+        this.rating = rating;
+    }
+
+    public float getLinger() {
+        return linger;
+    }
+
+    public void setLinger(float linger) {
+        this.linger = linger;
+    }
+
+    public float getBody() {
+        return body;
+    }
+
+    public void setBody(float body) {
+        this.body = body;
+    }
+
+    public String getUserID() {
+        return userID;
+    }
+
+    public void setUserID(String userID) {
+        this.userID = userID;
     }
 
     public String getName() {
@@ -117,14 +149,6 @@ public class BeerFB {
 
     public void setDate(String date) {
         this.date = date;
-    }
-
-    public float getRatting() {
-        return rating;
-    }
-
-    public void setRatting(float ratting) {
-        this.rating = ratting;
     }
 
     public String getNotes() {
