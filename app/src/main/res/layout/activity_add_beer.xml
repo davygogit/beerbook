@@ -303,23 +303,6 @@
             android:progress="5"/>
 
 
-        <Button
-            android:id="@+id/bt_add"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="8dp"
-            android:text="Ajouter"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/bt_test"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:onClick="test"
-            android:paddingTop="8dp"
-            android:text="tester"
-            android:visibility="gone" />
-
     </LinearLayout>
 
 </ScrollView>

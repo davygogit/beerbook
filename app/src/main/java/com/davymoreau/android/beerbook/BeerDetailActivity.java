@@ -4,60 +4,72 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.davymoreau.android.beerbook.database.BeerTastingContract;
 import com.davymoreau.android.beerbook.spiderchart.SpiderChartView;
 
-import java.io.File;
 import java.util.ArrayList;
+
+import static com.davymoreau.android.beerbook.util.PictureUtil.displayPic;
 
 public class BeerDetailActivity extends AppCompatActivity {
 
     long mId;
-    boolean mModifiable = false;
+    boolean mLocal = false;
     Context mContext;
     ContentValues mCv;
+    MenuItem editItem;
+
+    private static final int RC_EDIT = 512;
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == RC_EDIT && resultCode == RESULT_OK ){
+            if (data!=null && data.hasExtra("cv")) {
+                mCv = data.getParcelableExtra("cv");
+                display();
+            }
+        }
+    }
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.e("DETAIL", "onCreate: ");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beer_detail);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mContext = this;
 
-        /*View appBar =  findViewById(R.id.app_bar);
-        appBar.getLayoutParams().height = appBar.getWidth();
-        appBar.requestLayout();*/
-
         // récupération cv
-        //ContentValues mCv = null;
         Intent myItent = getIntent();
         if (myItent.hasExtra("cv")) {
             mCv = myItent.getParcelableExtra("cv");
         }
+        display();
+
+
+    }
+
+    private void display() {
         // récupération id
         if (mCv.containsKey(BeerTastingContract.BeerTastingEntry._ID)) {
             mId = mCv.getAsLong(BeerTastingContract.BeerTastingEntry._ID);
-            mModifiable = true;
+            mLocal = true;
         }
 
-        String path = mCv.getAsString("path");
+
         // nom bière
         String beerName = mCv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_NAME);
         // brasserie
@@ -93,42 +105,19 @@ public class BeerDetailActivity extends AppCompatActivity {
         float linger = mCv.getAsFloat(BeerTastingContract.BeerTastingEntry.COLUMN_LINGER);
 
 
-        // maj image
+        //majPicture();
         ImageView ivBeer = (ImageView) findViewById(R.id.ivct_beer);
-        //ivBeer.getLayoutParams().height = ivBeer.getWidth();
-        //ivBeer.requestLayout();
-        File fileImg = new File(path);
         ProgressBar progress = (ProgressBar) findViewById(R.id.progressBar_detail);
-        progress.setVisibility(View.VISIBLE);
-        progress.bringToFront();
-        if (fileImg.exists()) {
-            Uri uri = Uri.fromFile(fileImg);
+        Drawable drawable = getResources().getDrawable(R.drawable.biere);
 
-            Glide.with(this)
-                    .load(uri)
-                    .listener(new RequestListener<Uri, GlideDrawable>() {
-                        ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar_detail);
+        displayPic(mCv,ivBeer, progress, drawable, this);
 
-                        @Override
-                        public boolean onException(Exception e, Uri model, Target<GlideDrawable> target, boolean isFirstResource) {
-                            progressBar.setVisibility(View.GONE);
-                            return false;
-                        }
 
-                        @Override
-                        public boolean onResourceReady(GlideDrawable resource, Uri model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
-                            progressBar.setVisibility(View.GONE);
-                            return false;
-                        }
-                    })
-                    .into(ivBeer);
-        } else {
-            Drawable drawable = getResources().getDrawable(R.drawable.biere);
-            ivBeer.setImageDrawable(drawable);
-            progress.setVisibility(View.GONE);
-        }
+        // titre
+        CollapsingToolbarLayout collapsingToolbarLayout  = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
+        collapsingToolbarLayout.setTitle(beerName);
 
-        this.setTitle(beerName);
+
         // brasserie
         TextView tvBrewery = (TextView) findViewById(R.id.tv_detail_Brewery);
         tvBrewery.setText(brewery);
@@ -200,15 +189,27 @@ public class BeerDetailActivity extends AppCompatActivity {
         SpiderChartView spiderChartView = (SpiderChartView) findViewById(R.id.spider);
 
         spiderChartView.setData(cvList);
-
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
 
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.menu_beer_detail);
+
+        editItem = menu.findItem(R.id.action_edit);
+
+        if (!mLocal) {
+            Log.e("BEERDETAIL", "non modifiable");
+            editItem.setEnabled(false);
+            editItem.setVisible(false);
+            return true;
+        } else {
+            Log.e("BEERDETAIL", "modifiable");
+        }
         toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
@@ -217,7 +218,7 @@ public class BeerDetailActivity extends AppCompatActivity {
                     Intent intent = new Intent(mContext, AddBeerActivity.class);
                     intent.putExtra("id", mId);
                     intent.putExtra("cv", mCv);
-                    startActivity(intent);
+                    startActivityForResult(intent, RC_EDIT);
                 }
                 return true;
             }

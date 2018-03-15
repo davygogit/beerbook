@@ -3,8 +3,6 @@ package com.davymoreau.android.beerbook;
 import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,21 +12,11 @@ import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.RequestListener;
-import com.bumptech.glide.request.target.Target;
 import com.davymoreau.android.beerbook.database.BeerTastingContract;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
-import java.io.File;
 import java.util.ArrayList;
 
-import static com.davymoreau.android.beerbook.constApp.PIC_PATH;
-import static com.davymoreau.android.beerbook.constApp.PIC_URI;
+import static com.davymoreau.android.beerbook.util.PictureUtil.displayPic;
 
 /**
  * Created by davy on 19/07/2017.
@@ -50,8 +38,13 @@ public class BeerListAdapter extends RecyclerView.Adapter<BeerListAdapter.BeerHo
     }
 
     public void setBeers(ArrayList list) {
-        mList = list;
+        mList = (ArrayList<ContentValues>) list.clone();
         if (mList != null) notifyDataSetChanged();
+    }
+
+    public void reset(){
+        mList.clear();
+        notifyDataSetChanged();
     }
 
     public void addBeer(ContentValues cv) {
@@ -104,9 +97,11 @@ public class BeerListAdapter extends RecyclerView.Adapter<BeerListAdapter.BeerHo
             holder.itemView.setTag(id);
         }
         // pic
-        String pic = "";
+        //String pic = "";
 
-        if (contentValues.containsKey(PIC_URI)) {
+        displayPic(contentValues, holder.mPic, holder.mprogress, mContext.getResources().getDrawable(R.drawable.biere), mContext);
+
+      /*  if (contentValues.containsKey(PIC_URI)) {
             FirebaseStorage firebaseStorage;
             StorageReference storageReference;
             firebaseStorage = FirebaseStorage.getInstance();
@@ -153,7 +148,7 @@ public class BeerListAdapter extends RecyclerView.Adapter<BeerListAdapter.BeerHo
             }
 
 
-        } else if (contentValues.containsKey(PIC_PATH) /*&& !contentValues.getAsString(PIC_PATH).equals("")*/) {
+        } else if (contentValues.containsKey(PIC_PATH) ) {
             pic = contentValues.getAsString(PIC_PATH);
             File file = new File(pic);
             Uri uri;
@@ -181,9 +176,11 @@ public class BeerListAdapter extends RecyclerView.Adapter<BeerListAdapter.BeerHo
         } else {
             printDefaultPicture(holder);
 
-        }
+        }*/
 
     }
+
+
 
     private void printDefaultPicture( BeerHolder holder){
         Drawable defaultPic = mContext.getResources().getDrawable(R.drawable.biere);

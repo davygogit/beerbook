@@ -33,10 +33,6 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_beers"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_margin="0dp"
-        android:padding="0dp"
-        tools:layout_editor_absoluteX="2dp"
-        tools:layout_editor_absoluteY="2dp" />
+        android:layout_height="match_parent"/>
 
 </android.support.constraint.ConstraintLayout>

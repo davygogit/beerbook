@@ -158,12 +158,25 @@ public class SyncUtil {
         DatabaseReference newDatabaseReference;
         for (int i = 0; i < list.size(); i++) {
             cv = list.get(i);
+            String id = cv.getAsString(BeerTastingContract.BeerTastingEntry._ID);
             BeerFB beer = new BeerFB(cv, uid);
             newDatabaseReference = databaseReference.push();
             newDatabaseReference.setValue(beer);
             String key = newDatabaseReference.getKey();
+            // add pic
+            File pic = new  File(dir, id + ".jpg" );
+            if (pic.exists()){
+                FirebaseStorage firebaseStorage;
+                StorageReference storageReference;
+                firebaseStorage = FirebaseStorage.getInstance();
+                storageReference = firebaseStorage.getReference().child("photos");
+
+                StorageReference photoRef = storageReference.child(key+".jpg");
+                photoRef.putFile(Uri.fromFile(pic));
+            }
+
             // update database with key
-            String strFilter = BeerTastingContract.BeerTastingEntry._ID + "=" + cv.getAsString(BeerTastingContract.BeerTastingEntry._ID);
+            String strFilter = BeerTastingContract.BeerTastingEntry._ID + "=" + id;
             ContentValues args = new ContentValues();
             args.put(BeerTastingContract.BeerTastingEntry.COLUMN_FBASE_ID, key);
             sqLiteDatabase.update(BeerTastingContract.BeerTastingEntry.TABLE_BEER_NAME, args, strFilter, null);

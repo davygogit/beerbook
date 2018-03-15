@@ -1,18 +1,20 @@
 package com.davymoreau.android.beerbook;
 
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -22,7 +24,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RatingBar;
@@ -48,11 +49,13 @@ import java.util.Date;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static com.davymoreau.android.beerbook.constApp.PIC_EXT;
+import static com.davymoreau.android.beerbook.constApp.PIC_PATH;
 import static com.davymoreau.android.beerbook.constApp.STYLES_FILE;
 
 //import static com.davymoreau.android.beerbook.constApp.DIR;
 
-public class AddBeerActivity extends AppCompatActivity implements View.OnClickListener {
+public class AddBeerActivity extends AppCompatActivity {
 
     Activity activity;
 
@@ -98,22 +101,18 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
     SeekBar sbLinger;
     Spinner spinner;
 
-    File photoTemp;
     File photoCrop;
 
     int foamId = 0;
     int servingId = 0;
-    int DbId = -1;
+    long DbId = -1;
 
     ArrayList<String> stylesList;
 
-    private Uri tempUri;
-    private Uri tempContentUri;
     private Uri cropUri;
     private Uri cropContentUri;
 
     private static final int TAKE_PICTURE = 2;
-    private static final int CROP_PIC = 3;
     public static final int MY_PERMISSIONS_REQUEST_CAMERA = 0;
     private static final int FOAM = 4;
     private static final int SERVING = 5;
@@ -125,16 +124,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
             READ_EXTERNAL_STORAGE
     };
 
-    int foam = 1;
-
     File tdir ;
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,7 +136,6 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
        verifyStoragePermissions(this);
 
         tdir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-
 
         // récupération cv
         ContentValues contentValues = null;
@@ -168,34 +157,37 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         // prefill si mode modification
         if (myItent.hasExtra("id")) {
             contentValues = myItent.getParcelableExtra("cv");
-            DbId = myItent.getIntExtra("id", 0);
+           DbId = contentValues.getAsLong("_id");
+           // DbId = myItent.getIntExtra("id", 0);
             prefill(contentValues);
+            preCropPic(DbId);
 
         }
         // gestion photo
         getPicture();
 
-        // btn ajout
-        Button btAdd = (Button) findViewById(R.id.bt_add);
-        btAdd.setOnClickListener(this);
+    }
 
+    private void preCropPic(long id){
+        // rester si le fichier existe
+        File file = new File(tdir, String.valueOf(id) + PIC_EXT);
+        if (file.exists()){
+            File crop = new File(tdir, "crop" +PIC_EXT);
+            try {
+                FileUtil.copy(file, crop);
+            } catch (Exception e){
+
+            }
+        }
     }
 
     private void getPicture() {
 
-        photoCrop = new File(tdir, "crop.jpg");
+        photoCrop = new File(tdir, "crop" + PIC_EXT);
         cropUri = Uri.fromFile(photoCrop);
         cropContentUri = FileProvider.getUriForFile(this,
                 BuildConfig.APPLICATION_ID + ".fileprovider",
                 photoCrop);
-
-     /*   photoTemp = new File(tdir, "temp.jpg");
-        tempUri = Uri.fromFile(photoTemp);
-        tempContentUri = FileProvider.getUriForFile(this,
-                BuildConfig.APPLICATION_ID + ".fileprovider",
-                photoTemp);
-
-*/
 
 
         if (photoCrop.exists()) {
@@ -253,7 +245,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
 
             }
         });
-        // nom de la brasseri
+        // nom de la brasserie
         edBrewery = (EditText) findViewById(R.id.ed_brewery);
         // degree d'alcool
         edAlcohol = (EditText) findViewById(R.id.ed_degree);
@@ -600,26 +592,12 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         spinner.setAdapter(colorAdapter);
     }
 
-    @Override
-    public void onClick(View view) {
 
-        String style = edStyle.getText().toString();
-
-        saveData();
-
-        if (!stylesList.contains(style)) {
-            stylesList.add(style);
-            FileUtil.ArrayToInternalStorage(this, stylesList, STYLES_FILE);
-        }
-        Toast.makeText(AddBeerActivity.this, "bière " + edName.getText() + " ajoutée", Toast.LENGTH_SHORT).show();
-        photoCrop.delete();
-        finish();
-    }
 
     private void saveAndExit(){
         String style = edStyle.getText().toString();
 
-        saveData();
+        ContentValues cv = saveData();
 
         if (!stylesList.contains(style)) {
             stylesList.add(style);
@@ -627,10 +605,24 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         }
         Toast.makeText(AddBeerActivity.this, "bière " + edName.getText() + " ajoutée", Toast.LENGTH_SHORT).show();
         photoCrop.delete();
+
+        String picPath = getExternalFilesDir(Environment.DIRECTORY_PICTURES) + "/"  + DbId + ".jpg";
+
+
+        File file = new File(picPath);
+
+        if(file.exists()){
+            cv.put(PIC_PATH, picPath);
+        }
+        cv.put(BeerTastingContract.BeerTastingEntry._ID, DbId);
+        Intent intent = getIntent();
+        intent.putExtra("cv", cv);
+        setResult(RESULT_OK, intent);
+
         finish();
     }
 
-    private void saveData() {
+    private ContentValues saveData() {
         Date date = new Date();
         date.getTime();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -685,6 +677,10 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         
         DbId = BeersData.addBeer(mDb, cv, mUserId, tdir);
 
+        return cv;
+
+
+
 
 
         //deleteCrop();
@@ -699,8 +695,29 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
             saveAndExit();
 
         } else if (id == R.id.action_close){
-            photoCrop.delete();
-            finish();
+
+            AlertDialog.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert);
+            } else {
+                builder = new AlertDialog.Builder(this, R.style.Theme_AppCompat_Light_Dialog_Alert);
+            }
+            builder.setTitle("Annuler ajout bière")
+                    .setMessage("Etes-vous sûr de vouloir annler l'ajout d'une bière ?")
+                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            photoCrop.delete();
+                            finish();
+                        }
+                    })
+                    .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                           return;
+                        }
+                    })
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .show();
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -783,56 +800,6 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
     }
 
 
-    private void performCrop_() {
-        // take care of exceptions
-        try {
-
-            cropContentUri = FileProvider.getUriForFile(this,
-                    BuildConfig.APPLICATION_ID + ".fileprovider",
-                    photoCrop);
-
-
-            this.grantUriPermission("com.android.camera",cropContentUri,
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-
-            // call the standard crop action intent (the user device may not
-            // support it)
-            Intent cropIntent = new Intent("com.android.camera.action.CROP");
-
-
-
-            // indicate image type and Uri
-            cropIntent.setDataAndType(cropContentUri, "image/*");
-
-            cropIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            cropIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-
-            // set crop properties
-            cropIntent.putExtra("crop", "true");
-            // indicate aspect of desired crop
-            cropIntent.putExtra("aspectX", 1);
-            cropIntent.putExtra("aspectY", 1);
-            // indicate output X and Y
-            cropIntent.putExtra("outputX", 256);
-            cropIntent.putExtra("outputY", 256);
-
-            // retrieve Data on return
-            cropIntent.putExtra("return-Data", true);
-
-            cropIntent.putExtra("output", cropContentUri);
-
-            // start the activity - we handle returning in onActivityResult
-            startActivityForResult(cropIntent, CROP_PIC);
-        }
-        // respond to users whose devices do not support the crop action
-        catch (ActivityNotFoundException anfe) {
-            Toast toast = Toast
-                    .makeText(this, "This device doesn't support the crop action!", Toast.LENGTH_SHORT);
-            toast.show();
-        }
-    }
-
     private void updateFoam() {
         String sfoam = "";
         switch (foamId) {
@@ -874,7 +841,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         edStyle.setText(cv.getAsString(BeerTastingContract.BeerTastingEntry.COLUMN_STYLE));
         spColor.setSelection(cv.getAsInteger(BeerTastingContract.BeerTastingEntry.COLUMN_COLOR));
 
-        File pic = new File(tdir, DbId + ".jpg");
+        File pic = new File(tdir, DbId + PIC_EXT);
         if (pic.exists()) {
             try {
                 FileUtil.copy(pic, photoCrop);
@@ -929,10 +896,7 @@ public class AddBeerActivity extends AppCompatActivity implements View.OnClickLi
         super.onBackPressed();
         photoCrop.delete();
     }
-   /* private void deleteCrop() {
-        File crop = new File(DIR, "crop.jpg");
-        crop.delete();
-    }*/
+
 
     private void Camerapermission() {
         // Here, thisActivity is the current activity

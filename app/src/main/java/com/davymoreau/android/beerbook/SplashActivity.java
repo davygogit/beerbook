@@ -14,11 +14,8 @@ import com.davymoreau.android.beerbook.util.FileUtil;
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.Arrays;
 
 import static com.davymoreau.android.beerbook.constApp.STYLES_FILE;
@@ -26,10 +23,10 @@ import static com.davymoreau.android.beerbook.firebase.SyncUtil.firebasesync;
 
 public class SplashActivity extends AppCompatActivity {
 
-    private FirebaseDatabase mFirebaseDatabase;
-    private DatabaseReference mBeersDatabaseReference;
+   /* private FirebaseDatabase mFirebaseDatabase;
+    private DatabaseReference mBeersDatabaseReference;*/
     private FirebaseAuth mFirebaseAuth;
-    private FirebaseAuth.AuthStateListener mAuthStateListener;
+    /*private FirebaseAuth.AuthStateListener mAuthStateListener;*/
 
     private static final int RC_SIGN_IN = 123;
     File dir;
@@ -37,12 +34,20 @@ public class SplashActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_splash);
+
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+        finish();
+
         dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
         // tester si première connection
         mFirebaseAuth = FirebaseAuth.getInstance();
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+
         if (!preferences.contains("first")) {
             SharedPreferences.Editor editor = preferences.edit();
             editor.putBoolean("first", false);
@@ -92,7 +97,14 @@ public class SplashActivity extends AppCompatActivity {
     }
 
 
+    @Override
+    protected void onDestroy() {
+
+        super.onDestroy();
+    }
+
     private void syncAndFinish(File dir) {
+
         String uid = "";
         FirebaseUser fbUser = mFirebaseAuth.getCurrentUser();
         if (fbUser != null) {
@@ -100,9 +112,9 @@ public class SplashActivity extends AppCompatActivity {
             firebasesync(this, uid, dir);
         }
 
-        InputStream test = getResources().openRawResource(R.raw.beertypes);
+        //InputStream test = getResources().openRawResource(R.raw.beertypes);
 
-        File crop = new File(getExternalCacheDir(), "crop.jpg");
+        File crop = new File(dir, "crop.jpg");
         crop.delete();
 
         // si fichier type de bière n'existe pas le créer.
@@ -111,8 +123,6 @@ public class SplashActivity extends AppCompatActivity {
             FileUtil.rawFileToInternalStorage(this, R.raw.beertypes, STYLES_FILE);
         // synchro fire base
         // Lancer la main activity
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
         finish();
     }
 }

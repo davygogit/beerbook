@@ -118,9 +118,10 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        UserChange = false;
+
         dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
-        mUserID = "";
 
         mAdapterList = new ArrayList();
         mSearch = "";
@@ -139,6 +140,7 @@ public class MainActivity extends AppCompatActivity
 
         // Auth
         mFirebaseAuth = FirebaseAuth.getInstance();
+        //mUserID = mFirebaseAuth.getCurrentUser().getUid();
 
 
         // Ajout nouvelle bière
@@ -146,8 +148,11 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                String sId;
+                if (mUserID == null) sId = "";
+                else sId = mUserID;
                 Intent intent = new Intent(mContext, AddBeerActivity.class);
-                intent.putExtra("auth", mUserID);
+                intent.putExtra("auth", sId);
                 startActivity(intent);
             }
         });
@@ -189,9 +194,9 @@ public class MainActivity extends AppCompatActivity
                 final long id = (long) viewHolder.itemView.getTag();
                 AlertDialog.Builder builder;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    builder = new AlertDialog.Builder(mContext, android.R.style.Theme_Material_Dialog_Alert);
+                    builder = new AlertDialog.Builder(mContext, android.R.style.Theme_Material_Light_Dialog_Alert);
                 } else {
-                    builder = new AlertDialog.Builder(mContext);
+                    builder = new AlertDialog.Builder(mContext, R.style.Theme_AppCompat_Light_Dialog_Alert);
                 }
                 builder.setTitle("Effacer une dégustation")
                         .setMessage("Etes-vous sûr de vouloir supprimer cette dégustation ?")
@@ -215,83 +220,15 @@ public class MainActivity extends AppCompatActivity
 
 
         mValueEventListener = new ValueEventListener() {
-            boolean mNewBeer = false;
 
-
-            /*query.addListenerForSingleValueEvent(new ValueEventListener() {
-    boolean processDone = false;
-
-    @Override
-    public void onDataChange(DataSnapshot dataSnapshot) {
-        if (dataSnapshot.exists()) {
-                            final long nbChild = ++ ChildCount ;
-                    BeerFB beer = postSnapshot.getValue(BeerFB.class);
-                    ContentValues cv = beer.retrieveContentValue();
-                    final String key = postSnapshot.getKey();
-                    String userID = beer.getUserID();
-                    // tester si photo existe
-                    //FBUtil fbUtil = new FBUtil();
-                    //String path ="";
-
-                    //Uri pathUri = fbUtil.GetPhotoUri( key);
-
-                    String picPath = FB_PHOTO_PATH + key + ".jpg";
-                    cv.put("picpath", picPath);
-
-                    mStorageReference = mFirebaseStorage.getReferenceFromUrl(picPath);
-                    mStorageReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
-                        @Override
-                        public void onSuccess(Uri uri) {
-                            BeerFB beer = postSnapshot.getValue(BeerFB.class);
-                            ContentValues cv = beer.retrieveContentValue();
-                            String userID = beer.getUserID();
-                            cv.put("picUri", uri.getPath());
-
-                            // ajouter dans mCloudList
-                            mCloudList.add(cv);
-                            // ajouter dans adapter
-                            if (!mLocal) {
-                                mAdapter.addBeer(cv);
-                            }
-
-                            if (nbChild == nbChildren){
-                                if (!mLocal) {
-                                    mAdapter.setBeers(mCloudList);
-                                }
-                            }
-                        }
-                    }).addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            BeerFB beer = postSnapshot.getValue(BeerFB.class);
-                            ContentValues cv = beer.retrieveContentValue();
-                            // ajouter dans mCloudList
-                            mCloudList.add(cv);
-                            // ajouter dans adapter
-                            if (!mLocal) {
-                                mAdapter.addBeer(cv);
-                            }
-
-                            if (nbChild == nbChildren){
-                                if (!mLocal) {
-                                    mAdapter.setBeers(mCloudList);
-                                }
-                            }
-                        }
-                    });
-        } else {
-                mFirebaseReference.removeEventListener(mValueEventListener);
-        }
-    }
-
-    @Override public void onCancelled(DatabaseError databaseError) {}
-});*/
             @Override
             public void onDataChange(final DataSnapshot dataSnapshot) {
 
                 final long nbChildren = dataSnapshot.getChildrenCount();
                 long ChildCount = 0;
+                mCloudList.clear();
                 for (final DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
+
                     final long nbChild = ++ ChildCount ;
                     BeerFB beer = postSnapshot.getValue(BeerFB.class);
                     ContentValues cv = beer.retrieveContentValue();
@@ -306,13 +243,13 @@ public class MainActivity extends AppCompatActivity
                         public void onSuccess(Uri uri) {
                             BeerFB beer = postSnapshot.getValue(BeerFB.class);
                             ContentValues cv = beer.retrieveContentValue();
-                            String userID = beer.getUserID();
                             String fullUri = uri.toString();
                             cv.put(PIC_URI, fullUri);
 
                             // ajouter dans mCloudList
                             mCloudList.add(cv);
                             // ajouter dans adapter
+
                             if (!mLocal) {
                                 mAdapter.addBeer(cv);
                             }
@@ -329,7 +266,9 @@ public class MainActivity extends AppCompatActivity
                             BeerFB beer = postSnapshot.getValue(BeerFB.class);
                             ContentValues cv = beer.retrieveContentValue();
                             // ajouter dans mCloudList
+
                             mCloudList.add(cv);
+
                             // ajouter dans adapter
                             if (!mLocal) {
                                 mAdapter.addBeer(cv);
@@ -342,8 +281,9 @@ public class MainActivity extends AppCompatActivity
                             }
                         }
                     });
-                }
 
+                }
+                mFirebaseReference.removeEventListener(this);
             // updateBd();
             }
 
@@ -352,40 +292,40 @@ public class MainActivity extends AppCompatActivity
 
             }
         };
-        //mFirebaseReference.addListenerForSingleValueEvent(mValueEventListener);
+
 
         mAuthStateListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
 
-
-                if(UserChange){
-                    finish();
-                    startActivity(getIntent());
-                }
                 FirebaseUser user = firebaseAuth.getCurrentUser();
-               // mFirebaseReference.removeEventListener(mValueEventListener);
-                mCloudList.clear();
+                //mFirebaseAuth = firebaseAuth;
+
                 if (user != null) {
+                    // login
                     mNavigationView.getMenu().findItem(R.id.nav_login).setEnabled(false);
                     mNavigationView.getMenu().findItem(R.id.nav_logout).setEnabled(true);
                     mNavigationView.getMenu().findItem(R.id.nav_delete_account).setEnabled(true);
-                    mFirebaseAuth = firebaseAuth;
+                    //mFirebaseAuth = firebaseAuth;
                     mUserID = user.getUid();
                     // sync
                     firebasesync(mContext, mUserID, dir);
 
 
                 } else {
+                    //logout
                     mNavigationView.getMenu().findItem(R.id.nav_login).setEnabled(true);
                     mNavigationView.getMenu().findItem(R.id.nav_logout).setEnabled(false);
                     mNavigationView.getMenu().findItem(R.id.nav_delete_account).setEnabled(false);
-                    mFirebaseAuth = null;
+                   // mFirebaseAuth = null;
                     mUserID = "";
 
                 }
-                UserChange = true;
+
+                mCloudList.clear();
+                //UserChange = true;
                 mFirebaseReference.addListenerForSingleValueEvent(mValueEventListener);
+
             }
         };
 
@@ -477,6 +417,7 @@ public class MainActivity extends AppCompatActivity
                     mSort = 1;
                     sortItem.setIcon(getResources().getDrawable(R.drawable.ic_action_alpha));
 
+
                 } else if (mSort == 1) {
                     mSort = 2;
                     sortItem.setIcon(getResources().getDrawable(R.drawable.ic_action_star));
@@ -549,20 +490,17 @@ public class MainActivity extends AppCompatActivity
         //Cursor cursor = mAdapter.getItem(ClickedItemIndex);
         ContentValues cv = mAdapter.getItem(ClickedItemIndex);
         // path img
-        String path ="";
-        if(mLocal){
+        String path = "";
+        if (mLocal) {
             long id = cv.getAsInteger(BeerTastingContract.BeerTastingEntry._ID);
             path = dir + "/" + String.valueOf(id) + ".jpg";
-        }else{
+        } else {
 
         }
 
         cv.put("path", path);
 
         intent.putExtra("cv", cv);
-        //int id = cursor.getInt(cursor.getColumnIndex(BeerTastingContract.BeerTastingEntry._ID));
-        //int id = cv.getAsInteger(BeerTastingContract.BeerTastingEntry._ID);
-        //intent.putExtra("id", id);
         startActivity(intent);
     }
 

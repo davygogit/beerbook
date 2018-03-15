@@ -12,7 +12,8 @@ public class constApp {
     //public static final File
 
     //public static final File DIR = Environment.getDataDirectory();
-    public static final String  FB_PHOTO_PATH = "gs://beerbook-2e09d.appspot.com/photos/";
+    public static final String PIC_EXT = ".jpg";
+    public static final String FB_PHOTO_PATH = "gs://beerbook-2e09d.appspot.com/photos/";
     public static final String PIC_PATH = "picpath";
     public static final String PIC_URI = "picUri";
 }
